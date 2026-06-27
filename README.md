@@ -1,7 +1,4 @@
 <div align="center">
-  <!-- Puedes cambiar este enlace por un banner real después -->
-  <img src="https://via.placeholder.com/800x200/1a1a1a/00ffcc?text=CoopeNova+|+Portal+Web+Administrativo" alt="Banner CoopeNova" />
-
   # 🏦 Portalweb-XU: Sistema Administrativo
 
   <p>
@@ -13,13 +10,6 @@
 
   *Prototipo funcional minimalista diseñado en Modo Oscuro para optimizar la experiencia de usuario.*
 </div>
-
----
-
-## 🚀 Demo Visual
-> **Nota:** *Te recomiendo grabar un pequeño GIF de 5 segundos navegando por tu página y reemplazar este enlace para que se vea el sistema en acción.*
-
-![Demo animada](https://via.placeholder.com/800x350/2c2c2c/ffffff?text=Sube+el+GIF+de+tu+pantalla+aqu%C3%AD)
 
 ---
 
@@ -38,7 +28,7 @@
     <li><b>Dashboard Administrativo:</b> Panel de control con indicadores clave (KPIs).</li>
     <li><b>Gestión de Préstamos:</b> Bandeja interactiva para solicitudes (Pendientes, Aprobadas, Rechazadas).</li>
     <li><b>Módulo de Socios:</b> Buscador eficiente para localizar expedientes de clientes.</li>
-    <li><b>Navegación Intuitiva:</b> Interfaz SPA (Single Page Application) simulada con JavaScript para evitar la recarga constante de la página.</li>
+    <li><b>Navegación Intuitiva:</b> Interfaz SPA simulada con JavaScript para evitar la recarga constante de la página.</li>
   </ul>
 </details>
 
