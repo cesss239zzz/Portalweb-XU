@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaveWave - Portal Administrativo</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- ==================== PANTALLA DE LOGIN ==================== -->
+    <div id="login-container" class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-header">
+                <span class="logo-emoji">🌊</span>
+                <h1>SaveWave</h1>
+                <p>Portal Administrativo Financiero</p>
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Usuario</label>
+                    <input type="text" id="username" placeholder="Ingrese su usuario (ej: admin)" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <div id="login-error" class="error-message hidden">Usuario o contraseña incorrectos. Intente con admin / admin.</div>
+                <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+            </form>
+            <div class="auth-footer">
+                <p>&copy; 2026 SaveWave Inc. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== LAYOUT PRINCIPAL (SPA) ==================== -->
+    <div id="app-layout" class="app-layout hidden">
+        
+        <!-- SIDEBAR (Menú Lateral) -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <span class="brand-emoji">🌊</span>
+                <span class="brand-name">SaveWave</span>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <ul>
+                    <li>
+                        <button class="menu-item active" data-view="dashboard" id="menu-btn-dashboard">
+                            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                            <span>Dashboard</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="menu-item" data-view="loans" id="menu-btn-loans">
+                            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            <span>Gestión de Préstamos</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="menu-item" data-view="directory" id="menu-btn-directory">
+                            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            <span>Directorio de Socios</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="menu-item logout-btn" id="menu-btn-logout">
+                    <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- CONTENEDOR CENTRAL -->
+        <main class="main-content">
+            
+            <!-- Topbar (Cabecera Superior) -->
+            <header class="topbar">
+                <div class="topbar-welcome">
+                    <h2 id="page-title">Dashboard</h2>
+                    <p id="topbar-date">Sábado, 27 de Junio, 2026</p>
+                </div>
+                <div class="topbar-user">
+                    <div class="user-avatar">AD</div>
+                    <div class="user-info">
+                        <span class="user-name">Admin SaveWave</span>
+                        <span class="user-role">Super Administrador</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Vistas Dinámicas (SPA Container) -->
+            <div class="views-container">
+                
+                <!-- 1. VISTA DASHBOARD -->
+                <section id="view-dashboard" class="app-view">
+                    <!-- Tarjetas de Indicadores (KPIs) -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-cyan">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            </div>
+                            <div class="kpi-details">
+                                <h3>Solicitudes Hoy</h3>
+                                <div class="kpi-value">28</div>
+                                <span class="kpi-trend trend-up">↑ +12% vs ayer</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-blue">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            </div>
+                            <div class="kpi-details">
+                                <h3>Montos Aprobados</h3>
+                                <div class="kpi-value">$245,800.00</div>
+                                <span class="kpi-trend trend-up">↑ +8.4% esta sem.</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-green">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            </div>
+                            <div class="kpi-details">
+                                <h3>Socios Activos</h3>
+                                <div class="kpi-value">3,124</div>
+                                <span class="kpi-trend trend-up">↑ +45 nuevos socios</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel de Gráfico / Resumen Adicional (Para un diseño Premium) -->
+                    <div class="dashboard-details-row">
+                        <div class="dashboard-panel chart-panel">
+                            <div class="panel-header">
+                                <h3>Actividad Financiera Reciente</h3>
+                                <span class="badge badge-outline">En tiempo real</span>
+                            </div>
+                            <div class="fake-chart-container">
+                                <!-- Gráfico ficticio minimalista en CSS/SVG para impacto visual -->
+                                <svg class="sparkline-full" viewBox="0 0 600 200" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stop-color="var(--accent-primary)" stop-opacity="0.3"/>
+                                            <stop offset="100%" stop-color="var(--accent-primary)" stop-opacity="0.0"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M 0 150 Q 75 120 150 160 T 300 90 T 450 110 T 600 60 L 600 200 L 0 200 Z" fill="url(#chart-grad)"></path>
+                                    <path d="M 0 150 Q 75 120 150 160 T 300 90 T 450 110 T 600 60" fill="none" stroke="var(--accent-primary)" stroke-width="3" stroke-linecap="round"></path>
+                                    <!-- Puntos en el gráfico -->
+                                    <circle cx="150" cy="160" r="5" fill="var(--bg-card)" stroke="var(--accent-primary)" stroke-width="2"></circle>
+                                    <circle cx="300" cy="90" r="5" fill="var(--bg-card)" stroke="var(--accent-primary)" stroke-width="2"></circle>
+                                    <circle cx="450" cy="110" r="5" fill="var(--bg-card)" stroke="var(--accent-primary)" stroke-width="2"></circle>
+                                    <circle cx="600" cy="60" r="6" fill="var(--accent-secondary)" stroke="var(--bg-card)" stroke-width="2"></circle>
+                                </svg>
+                                <div class="chart-labels">
+                                    <span>Lun</span>
+                                    <span>Mar</span>
+                                    <span>Mié</span>
+                                    <span>Jue</span>
+                                    <span>Vie</span>
+                                    <span>Sáb (Hoy)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-panel logs-panel">
+                            <div class="panel-header">
+                                <h3>Acciones Rápidas</h3>
+                            </div>
+                            <div class="quick-actions-grid">
+                                <button class="btn btn-secondary action-btn" onclick="app.navigateTo('loans')">
+                                    <span class="btn-icon">📁</span>
+                                    <span>Ver Solicitudes</span>
+                                </button>
+                                <button class="btn btn-secondary action-btn" onclick="app.navigateTo('directory')">
+                                    <span class="btn-icon">👥</span>
+                                    <span>Buscar Socios</span>
+                                </button>
+                                <button class="btn btn-accent action-btn" id="btn-quick-new-loan">
+                                    <span class="btn-icon">⚡</span>
+                                    <span>Nueva Alerta</span>
+                                </button>
+                            </div>
+                            <div class="notification-feed">
+                                <h4>Alertas del Sistema</h4>
+                                <div class="feed-item">
+                                    <span class="feed-dot active"></span>
+                                    <span class="feed-text">Nueva solicitud de préstamo de <strong>Sofía Ortega</strong> por $25,000</span>
+                                </div>
+                                <div class="feed-item">
+                                    <span class="feed-dot"></span>
+                                    <span class="feed-text">Depósito de garantía aprobado para <strong>Carlos Mendoza</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. VISTA GESTIÓN DE PRÉSTAMOS -->
+                <section id="view-loans" class="app-view hidden">
+                    <div class="view-header-action">
+                        <h3>Solicitudes de Préstamos Recientes</h3>
+                        <button class="btn btn-accent" id="btn-simulate-add-loan">+ Registrar Solicitud</button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="styled-table" id="loans-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre del Socio</th>
+                                    <th>Monto</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th class="text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Inserted dynamically via JavaScript or defined as base static rows -->
+                                <tr>
+                                    <td>
+                                        <div class="table-member">
+                                            <div class="avatar-small">AM</div>
+                                            <span>Alejandro Muñoz</span>
+                                        </div>
+                                    </td>
+                                    <td class="font-semibold">$15,000.00</td>
+                                    <td>2026-06-27</td>
+                                    <td><span class="status-badge status-pending">Pendiente</span></td>
+                                    <td class="text-right actions-cell">
+                                        <button class="btn btn-icon-only btn-approve" title="Aprobar">✓</button>
+                                        <button class="btn btn-icon-only btn-reject" title="Rechazar">✗</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="table-member">
+                                            <div class="avatar-small">VG</div>
+                                            <span>Valeria Gómez</span>
+                                        </div>
+                                    </td>
+                                    <td class="font-semibold">$45,000.00</td>
+                                    <td>2026-06-26</td>
+                                    <td><span class="status-badge status-approved">Aprobado</span></td>
+                                    <td class="text-right actions-cell">
+                                        <span class="action-done text-muted">Aprobada</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="table-member">
+                                            <div class="avatar-small">RH</div>
+                                            <span>Roberto Herrera</span>
+                                        </div>
+                                    </td>
+                                    <td class="font-semibold">$8,500.00</td>
+                                    <td>2026-06-25</td>
+                                    <td><span class="status-badge status-rejected">Rechazado</span></td>
+                                    <td class="text-right actions-cell">
+                                        <span class="action-done text-muted">Rechazada</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="table-member">
+                                            <div class="avatar-small">SO</div>
+                                            <span>Sofía Ortega</span>
+                                        </div>
+                                    </td>
+                                    <td class="font-semibold">$25,000.00</td>
+                                    <td>2026-06-25</td>
+                                    <td><span class="status-badge status-pending">Pendiente</span></td>
+                                    <td class="text-right actions-cell">
+                                        <button class="btn btn-icon-only btn-approve" title="Aprobar">✓</button>
+                                        <button class="btn btn-icon-only btn-reject" title="Rechazar">✗</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="table-member">
+                                            <div class="avatar-small">CM</div>
+                                            <span>Carlos Mendoza</span>
+                                        </div>
+                                    </td>
+                                    <td class="font-semibold">$120,000.00</td>
+                                    <td>2026-06-24</td>
+                                    <td><span class="status-badge status-approved">Aprobado</span></td>
+                                    <td class="text-right actions-cell">
+                                        <span class="action-done text-muted">Aprobada</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 3. VISTA DIRECTORIO DE SOCIOS -->
+                <section id="view-directory" class="app-view hidden">
+                    <div class="search-bar-container">
+                        <div class="search-input-wrapper">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="directory-search" placeholder="Buscar socios por nombre, ID o profesión...">
+                            <span class="clear-search hidden" id="clear-search-btn">✕</span>
+                        </div>
+                        <div class="search-filters">
+                            <span class="search-count" id="partners-count">Mostrando 3 socios</span>
+                        </div>
+                    </div>
+
+                    <!-- Cuadrícula (Grid) de Tarjetas de Clientes -->
+                    <div class="directory-grid" id="partners-grid">
+                        
+                        <!-- Socio 1 -->
+                        <div class="partner-card" data-search-term="sofia ortega ingeniera de software de0492">
+                            <div class="partner-card-header">
+                                <div class="partner-avatar bg-gradient-blue">SO</div>
+                                <div class="partner-id">ID: #DE-0492</div>
+                            </div>
+                            <div class="partner-info">
+                                <h3>Sofía Ortega</h3>
+                                <p class="partner-role">Ingeniera de Software</p>
+                                <div class="partner-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-label">Ahorros</span>
+                                        <span class="stat-val">$14,250.00</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Préstamos Activos</span>
+                                        <span class="stat-val">$25,000.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="partner-footer">
+                                <span class="status-dot-label">
+                                    <span class="status-dot dot-green"></span> Activo
+                                </span>
+                                <button class="btn btn-text text-details-btn">Ver Historial</button>
+                            </div>
+                        </div>
+
+                        <!-- Socio 2 -->
+                        <div class="partner-card" data-search-term="carlos mendoza arquitecto de0124">
+                            <div class="partner-card-header">
+                                <div class="partner-avatar bg-gradient-cyan">CM</div>
+                                <div class="partner-id">ID: #DE-0124</div>
+                            </div>
+                            <div class="partner-info">
+                                <h3>Carlos Mendoza</h3>
+                                <p class="partner-role">Arquitecto</p>
+                                <div class="partner-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-label">Ahorros</span>
+                                        <span class="stat-val">$32,800.00</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Préstamos Activos</span>
+                                        <span class="stat-val">$120,000.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="partner-footer">
+                                <span class="status-dot-label">
+                                    <span class="status-dot dot-green"></span> Activo
+                                </span>
+                                <button class="btn btn-text text-details-btn">Ver Historial</button>
+                            </div>
+                        </div>
+
+                        <!-- Socio 3 -->
+                        <div class="partner-card" data-search-term="valeria gomez disenadora ux/ui de0841">
+                            <div class="partner-card-header">
+                                <div class="partner-avatar bg-gradient-purple">VG</div>
+                                <div class="partner-id">ID: #DE-0841</div>
+                            </div>
+                            <div class="partner-info">
+                                <h3>Valeria Gómez</h3>
+                                <p class="partner-role">Diseñadora UX/UI</p>
+                                <div class="partner-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-label">Ahorros</span>
+                                        <span class="stat-val">$8,920.00</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Préstamos Activos</span>
+                                        <span class="stat-val">$45,000.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="partner-footer">
+                                <span class="status-dot-label">
+                                    <span class="status-dot dot-green"></span> Activo
+                                </span>
+                                <button class="btn btn-text text-details-btn">Ver Historial</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
