@@ -12,6 +12,9 @@
 </head>
 <body>
 
+    <!-- Región para mensajes de confirmación (toasts) -->
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
     <!-- ==================== PANTALLA DE LOGIN ==================== -->
     <div id="login-container" class="auth-wrapper">
         <div class="auth-card">
@@ -110,7 +113,7 @@
                             </div>
                             <div class="kpi-details">
                                 <h3>Solicitudes Hoy</h3>
-                                <div class="kpi-value" id="kpi-requests-val">--</div>
+                                <div class="kpi-value" id="kpi-requests-val" aria-live="polite">Cargando...</div>
                             </div>
                         </div>
 
@@ -120,7 +123,7 @@
                             </div>
                             <div class="kpi-details">
                                 <h3>Montos Aprobados</h3>
-                                <div class="kpi-value" id="kpi-approved-val">$0.00</div>
+                                <div class="kpi-value" id="kpi-approved-val" aria-live="polite">Cargando...</div>
                             </div>
                         </div>
 
@@ -130,7 +133,7 @@
                             </div>
                             <div class="kpi-details">
                                 <h3>Socios Activos</h3>
-                                <div class="kpi-value" id="kpi-members-val">--</div>
+                                <div class="kpi-value" id="kpi-members-val" aria-live="polite">Cargando...</div>
                             </div>
                         </div>
                     </div>
@@ -193,7 +196,13 @@
                                     <th class="text-right">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody></tbody>
+                            <tbody aria-live="polite">
+                                <tr>
+                                    <td colspan="5" class="table-empty">
+                                        <span class="loading-text"><span class="spinner" aria-hidden="true"></span>Cargando solicitudes...</span>
+                                    </td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
                 </section>
@@ -202,17 +211,19 @@
                 <section id="view-directory" class="vista hidden">
                     <div class="search-bar-container">
                         <div class="search-input-wrapper">
-                            <span class="search-icon">🔍</span>
-                            <input type="text" id="directory-search" placeholder="Buscar socios por nombre, ID o profesión...">
-                            <span class="clear-search hidden" id="clear-search-btn">✕</span>
+                            <button type="button" class="search-icon" id="search-socios-btn" aria-label="Buscar socio">🔍</button>
+                            <input type="text" id="directory-search" placeholder="Buscar por nombre o número de cuenta" autocomplete="off">
+                            <button type="button" class="clear-search hidden" id="clear-search-btn" aria-label="Limpiar búsqueda">✕</button>
                         </div>
                         <div class="search-filters">
                             <span class="search-count" id="partners-count">Mostrando 0 socios</span>
                         </div>
                     </div>
 
-                    <!-- Cuadrícula (Grid) de Tarjetas de Clientes (Vacia) -->
-                    <div class="directory-grid" id="partners-grid"></div>
+                    <!-- Cuadrícula (Grid) de Tarjetas de Clientes -->
+                    <div class="directory-grid" id="partners-grid" aria-live="polite">
+                        <p class="empty-state"><span class="loading-text"><span class="spinner" aria-hidden="true"></span>Cargando socios...</span></p>
+                    </div>
                 </section>
 
             </div>

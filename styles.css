@@ -194,13 +194,20 @@ body {
 }
 
 .error-message {
-    color: var(--state-rejected);
+    /* #f87171 en vez de --state-rejected: sobre este fondo el rojo base (#ef4444)
+       no alcanza el contraste 4.5:1 exigido por WCAG 1.4.3 */
+    color: #f87171;
     font-size: 0.85rem;
     margin-bottom: 16px;
     background-color: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.2);
     padding: 10px 12px;
     border-radius: var(--border-radius-sm);
+}
+
+.form-group input::placeholder {
+    color: var(--text-muted);
+    opacity: 1;
 }
 
 
@@ -391,6 +398,19 @@ body {
     width: 100%;
 }
 
+/* Botones de ícono del buscador (lupa / limpiar): reseteados para verse
+   igual que los <span> originales, pero accesibles por teclado y con aria-label */
+.search-icon,
+.clear-search {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    cursor: pointer;
+    line-height: 1;
+}
+
 .search-icon {
     position: absolute;
     left: 20px;
@@ -400,13 +420,34 @@ body {
     font-size: 1.1rem;
 }
 
+.clear-search {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 1rem;
+    transition: var(--transition-smooth);
+}
+
+.clear-search:hover {
+    color: var(--text-main);
+}
+
+.search-icon:focus-visible,
+.clear-search:focus-visible {
+    outline: 2px solid var(--border-active);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
 .search-input-wrapper input {
     width: 100%;
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
     color: var(--text-main);
-    padding: 16px 20px 16px 52px;
+    padding: 16px 44px 16px 52px;
     font-size: 1rem;
     outline: none;
     transition: var(--transition-smooth);
@@ -416,6 +457,11 @@ body {
 .search-input-wrapper input:focus {
     border-color: var(--border-active);
     box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.search-input-wrapper input::placeholder {
+    color: var(--text-muted);
+    opacity: 1;
 }
 
 /* --- Tabla de Préstamos --- */
@@ -483,8 +529,119 @@ tr:hover td {
 
 .badge-rejected {
     background-color: rgba(239, 68, 68, 0.1);
-    color: var(--state-rejected);
+    /* #f87171 en vez de --state-rejected: sobre este fondo el rojo base (#ef4444)
+       no alcanza el contraste 4.5:1 exigido por WCAG 1.4.3 */
+    color: #f87171;
     border-color: rgba(239, 68, 68, 0.2);
+}
+
+
+/* --- Utilidades de texto --- */
+.text-muted {
+    color: var(--text-muted);
+}
+
+/* --- Tarjetas de Socios (Directorio) --- */
+.partner-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.partner-card h4 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.partner-card .badge {
+    align-self: flex-start;
+    margin-top: 4px;
+}
+
+/* --- Indicadores de Carga (Spinner) y Estados Vacíos --- */
+.loading-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--accent-blue);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.empty-state,
+.table-empty {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 32px 16px;
+    font-size: 0.9rem;
+    grid-column: 1 / -1;
+}
+
+/* --- Mensajes de Confirmación (Toast) --- */
+.toast-container {
+    position: fixed;
+    top: 110px;
+    right: 24px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 360px;
+}
+
+.toast {
+    background-color: var(--bg-card);
+    border: 1px solid var(--state-approved);
+    border-left: 4px solid var(--state-approved);
+    color: var(--text-main);
+    padding: 14px 18px;
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow-md);
+    font-size: 0.9rem;
+    animation: toast-in 0.3s ease-out forwards;
+}
+
+.toast strong {
+    color: var(--state-approved);
+}
+
+.toast.toast-hide {
+    animation: toast-out 0.3s ease-in forwards;
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-out {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(20px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner {
+        animation-duration: 1.4s;
+    }
+    .toast,
+    .toast.toast-hide {
+        animation: none;
+    }
 }
 
 
