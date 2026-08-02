@@ -13,6 +13,7 @@ import {
     onSnapshot,
     query,
     orderBy,
+    where,
     serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
@@ -22,6 +23,7 @@ const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const sociosCol = collection(db, "socios");
 const solicitudesCol = collection(db, "solicitudes");
+const movimientosCol = collection(db, "movimientos");
 
 /* --- Datos de ejemplo (solo se usan si se pulsa "Cargar Datos de Ejemplo") --- */
 function isoFecha(offsetDias = 0) {
@@ -206,11 +208,12 @@ function renderDirectorioSocios(listaSocios) {
     }
 
     grid.innerHTML = listaSocios.map((socio) => `
-        <div class="card partner-card">
+        <div class="card partner-card" data-id="${socio.id}" tabindex="0" role="button" aria-label="Ver estado financiero de ${socio.nombre}">
             <h4>${socio.nombre}</h4>
             <p class="text-muted">${socio.profesion}</p>
             <p class="text-muted">Cuenta: ${socio.cuenta}</p>
             <span class="badge ${socio.estado === 'Activo' ? 'badge-approved' : 'badge-rejected'}">${socio.estado}</span>
+            <p class="partner-card-hint">👁 Toca para ver el estado financiero</p>
             <div class="partner-card-actions">
                 <button type="button" class="btn-icon-action action-toggle-estado" data-id="${socio.id}" data-estado="${socio.estado}" aria-label="${socio.estado === 'Activo' ? 'Deshabilitar' : 'Habilitar'} a ${socio.nombre}">
                     ${socio.estado === 'Activo' ? '⏸ Deshabilitar' : '▶ Habilitar'}
@@ -340,6 +343,109 @@ async function eliminarSocio(id, nombre) {
     }
 }
 
+/* --- Estado Financiero del Socio (Modal: saldo + movimientos) --- */
+let movimientosUnsubscribe = null;
+let socioAbiertoId = null;
+
+function formatearMonto(monto, tipo) {
+    const signo = tipo === 'Egreso' ? '-' : '+';
+    return `${signo} ${formatearLempiras(Math.abs(monto))}`;
+}
+
+function renderMovimientos(movimientos, saldoInicial) {
+    const lista = document.getElementById('modal-movimientos-lista');
+    const saldoValor = document.getElementById('modal-saldo-valor');
+    if (!lista || !saldoValor) return;
+
+    const totalIngresos = movimientos.filter((m) => m.tipo === 'Ingreso').reduce((s, m) => s + m.monto, 0);
+    const totalEgresos = movimientos.filter((m) => m.tipo === 'Egreso').reduce((s, m) => s + m.monto, 0);
+    const saldoActual = (Number(saldoInicial) || 0) + totalIngresos - totalEgresos;
+
+    saldoValor.textContent = formatearLempiras(saldoActual);
+
+    if (!movimientos.length) {
+        lista.innerHTML = '<p class="empty-state">Aún no hay movimientos registrados para este socio.</p>';
+        return;
+    }
+
+    const ordenados = [...movimientos].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+
+    lista.innerHTML = ordenados.map((m) => `
+        <div class="movimiento-item">
+            <div>
+                <strong>${m.descripcion || (m.tipo === 'Ingreso' ? 'Ingreso' : 'Egreso')}</strong>
+                <p class="text-muted" style="font-size: 0.8rem; margin-top: 2px;">${formatearFecha(m.fecha)}</p>
+            </div>
+            <span class="movimiento-monto ${m.tipo === 'Ingreso' ? 'ingreso' : 'egreso'}">${formatearMonto(m.monto, m.tipo)}</span>
+        </div>
+    `).join('');
+}
+
+function abrirEstadoFinanciero(socio) {
+    const modal = document.getElementById('modal-estado-financiero');
+    const nombreEl = document.getElementById('modal-socio-nombre');
+    const cuentaEl = document.getElementById('modal-socio-cuenta');
+    const saldoValor = document.getElementById('modal-saldo-valor');
+    const lista = document.getElementById('modal-movimientos-lista');
+    if (!modal) return;
+
+    socioAbiertoId = socio.id;
+    if (nombreEl) nombreEl.textContent = `Estado Financiero — ${socio.nombre}`;
+    if (cuentaEl) cuentaEl.textContent = `Cuenta: ${socio.cuenta}`;
+    if (saldoValor) saldoValor.innerHTML = '<span class="loading-text"><span class="spinner" aria-hidden="true"></span>Cargando...</span>';
+    if (lista) lista.innerHTML = '<p class="empty-state"><span class="loading-text"><span class="spinner" aria-hidden="true"></span>Cargando movimientos...</span></p>';
+
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+
+    if (movimientosUnsubscribe) movimientosUnsubscribe();
+
+    const movimientosQuery = query(movimientosCol, where('socioId', '==', socio.id));
+    movimientosUnsubscribe = onSnapshot(movimientosQuery, (snapshot) => {
+        const movimientos = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        renderMovimientos(movimientos, socio.saldo);
+    }, (error) => {
+        console.error('Error al sincronizar movimientos:', error);
+        if (lista) lista.innerHTML = '<p class="empty-state">No se pudo conectar con la base de datos.</p>';
+    });
+}
+
+function cerrarModalFinanciero() {
+    const modal = document.getElementById('modal-estado-financiero');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+    }
+    if (movimientosUnsubscribe) {
+        movimientosUnsubscribe();
+        movimientosUnsubscribe = null;
+    }
+    socioAbiertoId = null;
+
+    const form = document.getElementById('form-movimiento');
+    form?.reset();
+    document.getElementById('movimiento-error')?.classList.add('hidden');
+}
+
+async function registrarMovimiento(tipo, monto, descripcion) {
+    if (!socioAbiertoId) return;
+
+    try {
+        await addDoc(movimientosCol, {
+            socioId: socioAbiertoId,
+            tipo,
+            monto,
+            descripcion: descripcion || '',
+            fecha: isoFecha(0),
+            creadoEn: serverTimestamp(),
+        });
+        mostrarToast(`${tipo === 'Ingreso' ? 'Ingreso' : 'Egreso'} registrado con éxito.`);
+    } catch (err) {
+        console.error('Error al registrar el movimiento:', err);
+        mostrarToast('No se pudo registrar el movimiento. Intenta de nuevo.');
+    }
+}
+
 /* --- Crear Usuario (Socio) --- */
 async function crearSocio(datos) {
     await addDoc(sociosCol, {
@@ -460,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 6c. DESHABILITAR / ELIMINAR SOCIOS (delegado, las tarjetas se re-renderizan)
+    // 6c. DESHABILITAR / ELIMINAR SOCIOS y ABRIR ESTADO FINANCIERO (delegado, las tarjetas se re-renderizan)
     const partnersGridEl = document.getElementById('partners-grid');
     if (partnersGridEl) {
         partnersGridEl.addEventListener('click', (e) => {
@@ -469,12 +575,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (btnToggle) {
                 alternarEstadoSocio(btnToggle.dataset.id, btnToggle.dataset.estado);
+                return;
             }
 
             if (btnDelete) {
                 const nombre = btnDelete.closest('.partner-card')?.querySelector('h4')?.textContent || 'este socio';
                 eliminarSocio(btnDelete.dataset.id, nombre);
+                return;
             }
+
+            // Si el clic no vino de los botones de acción, se toca la tarjeta -> abrir estado financiero
+            const card = e.target.closest('.partner-card');
+            if (card) {
+                const socio = state.partners.find((p) => p.id === card.dataset.id);
+                if (socio) abrirEstadoFinanciero(socio);
+            }
+        });
+
+        partnersGridEl.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const card = e.target.closest('.partner-card');
+            if (!card) return;
+            e.preventDefault();
+            const socio = state.partners.find((p) => p.id === card.dataset.id);
+            if (socio) abrirEstadoFinanciero(socio);
         });
     }
 
@@ -542,6 +666,48 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSeed = document.getElementById('btn-seed-data');
     if (btnSeed) {
         btnSeed.addEventListener('click', cargarDatosEjemplo);
+    }
+
+    // 9. MODAL DE ESTADO FINANCIERO (cerrar + registrar movimiento)
+    const modalFinanciero = document.getElementById('modal-estado-financiero');
+    const btnCerrarModal = document.getElementById('btn-cerrar-modal-financiero');
+    const formMovimiento = document.getElementById('form-movimiento');
+    const errorMovimiento = document.getElementById('movimiento-error');
+
+    if (btnCerrarModal) {
+        btnCerrarModal.addEventListener('click', cerrarModalFinanciero);
+    }
+
+    if (modalFinanciero) {
+        modalFinanciero.addEventListener('click', (e) => {
+            if (e.target === modalFinanciero) cerrarModalFinanciero();
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalFinanciero && !modalFinanciero.classList.contains('hidden')) {
+            cerrarModalFinanciero();
+        }
+    });
+
+    if (formMovimiento) {
+        formMovimiento.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const tipo = document.getElementById('movimiento-tipo').value;
+            const montoInput = document.getElementById('movimiento-monto');
+            const descripcion = document.getElementById('movimiento-descripcion').value.trim();
+            const monto = Number(montoInput.value);
+
+            if (!monto || monto <= 0) {
+                if (errorMovimiento) errorMovimiento.classList.remove('hidden');
+                return;
+            }
+            errorMovimiento?.classList.add('hidden');
+
+            registrarMovimiento(tipo, monto, descripcion);
+            formMovimiento.reset();
+        });
     }
 });
 
