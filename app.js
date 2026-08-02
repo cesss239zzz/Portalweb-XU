@@ -2,7 +2,25 @@
    SaveWave - Portal Administrativo - app.js
    ========================================================================== */
 
-/* --- Datos de demostración (simulan una respuesta de backend) --- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    onSnapshot,
+    query,
+    orderBy,
+    serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+/* --- Conexión a Firebase / Firestore --- */
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+const sociosCol = collection(db, "socios");
+const solicitudesCol = collection(db, "solicitudes");
+
+/* --- Datos de ejemplo (solo se usan si se pulsa "Cargar Datos de Ejemplo") --- */
 function isoFecha(offsetDias = 0) {
     const d = new Date();
     d.setDate(d.getDate() + offsetDias);
@@ -30,7 +48,7 @@ const NOMBRES_DEMO_NUEVA_SOLICITUD = [
     'Fernando Aguilar', 'Sofía Reyes', 'Gerardo Núñez', 'Patricia Villeda', 'Diego Ramírez'
 ];
 
-// Estado en memoria de la aplicación (simula los datos que vendrían del servidor)
+// Estado en memoria: es solo una copia local de lo último recibido de Firestore
 const state = {
     loans: [],
     partners: [],
@@ -43,6 +61,7 @@ function formatearLempiras(monto) {
 }
 
 function formatearFecha(fechaISO) {
+    if (!fechaISO) return '—';
     const [y, m, d] = fechaISO.split('-');
     return `${d}/${m}/${y}`;
 }
@@ -101,6 +120,21 @@ function mostrarCargaDirectorio() {
     }
 }
 
+function mostrarErrorConexion() {
+    const mensaje = 'No se pudo conectar con la base de datos. Revisa la configuración en firebase-config.js.';
+
+    ['kpi-requests-val', 'kpi-approved-val', 'kpi-members-val'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = 'Error';
+    });
+
+    const tbody = document.querySelector('#loans-table tbody');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="table-empty">${mensaje}</td></tr>`;
+
+    const grid = document.getElementById('partners-grid');
+    if (grid) grid.innerHTML = `<p class="empty-state">${mensaje}</p>`;
+}
+
 /* --- Renderizado --- */
 function renderKpis() {
     const hoy = isoFecha(0);
@@ -139,13 +173,24 @@ function renderTablaSolicitudes() {
     `).join('');
 }
 
+function listaSociosFiltrada() {
+    const searchInput = document.getElementById('directory-search');
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    if (!query) return state.partners;
+    return state.partners.filter((p) =>
+        (p.nombre || '').toLowerCase().includes(query) || (p.cuenta || '').toLowerCase().includes(query)
+    );
+}
+
 function renderDirectorioSocios(listaSocios) {
     const grid = document.getElementById('partners-grid');
     const contador = document.getElementById('partners-count');
     if (!grid) return;
 
     if (!listaSocios.length) {
-        grid.innerHTML = '<p class="empty-state">No se encontraron socios con ese criterio de búsqueda.</p>';
+        grid.innerHTML = state.partners.length
+            ? '<p class="empty-state">No se encontraron socios con ese criterio de búsqueda.</p>'
+            : '<p class="empty-state">Aún no hay socios registrados. Usa "+ Crear Usuario" o "Cargar Datos de Ejemplo" en el Dashboard.</p>';
         if (contador) contador.textContent = 'Mostrando 0 socios';
         return;
     }
@@ -164,8 +209,11 @@ function renderDirectorioSocios(listaSocios) {
     }
 }
 
-/* --- Carga inicial de datos (simula una petición al servidor) --- */
-function cargarDatosIniciales() {
+/* --- Sincronización en tiempo real con Firestore --- */
+let loansUnsubscribe = null;
+let partnersUnsubscribe = null;
+
+function iniciarSincronizacionDatos() {
     mostrarCargaKpis();
     mostrarCargaTabla();
     mostrarCargaDirectorio();
@@ -173,34 +221,38 @@ function cargarDatosIniciales() {
     const searchInput = document.getElementById('directory-search');
     if (searchInput) searchInput.disabled = true;
 
-    setTimeout(() => {
-        state.loans = [...MOCK_LOANS];
-        state.partners = [...MOCK_PARTNERS];
+    if (loansUnsubscribe) loansUnsubscribe();
+    if (partnersUnsubscribe) partnersUnsubscribe();
 
+    const solicitudesQuery = query(solicitudesCol, orderBy('creadoEn', 'desc'));
+    loansUnsubscribe = onSnapshot(solicitudesQuery, (snapshot) => {
+        state.loans = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
         renderKpis();
         renderTablaSolicitudes();
-        renderDirectorioSocios(state.partners);
+    }, (error) => {
+        console.error('Error al sincronizar solicitudes:', error);
+        mostrarErrorConexion();
+    });
 
+    const sociosQuery = query(sociosCol, orderBy('creadoEn', 'desc'));
+    partnersUnsubscribe = onSnapshot(sociosQuery, (snapshot) => {
+        state.partners = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        renderKpis();
+        renderDirectorioSocios(listaSociosFiltrada());
         if (searchInput) searchInput.disabled = false;
-    }, 700);
+    }, (error) => {
+        console.error('Error al sincronizar socios:', error);
+        mostrarErrorConexion();
+    });
 }
 
 /* --- Buscador de Socios --- */
 function filtrarSocios() {
-    const searchInput = document.getElementById('directory-search');
     const clearBtn = document.getElementById('clear-search-btn');
-    if (!searchInput) return;
-
-    const query = searchInput.value.trim().toLowerCase();
+    const searchInput = document.getElementById('directory-search');
+    const query = searchInput ? searchInput.value.trim() : '';
     if (clearBtn) clearBtn.classList.toggle('hidden', query.length === 0);
-
-    const filtrados = !query
-        ? state.partners
-        : state.partners.filter((p) =>
-            p.nombre.toLowerCase().includes(query) || p.cuenta.toLowerCase().includes(query)
-        );
-
-    renderDirectorioSocios(filtrados);
+    renderDirectorioSocios(listaSociosFiltrada());
 }
 
 function limpiarBusquedaSocios() {
@@ -215,23 +267,58 @@ function limpiarBusquedaSocios() {
 }
 
 /* --- Registrar Nueva Solicitud --- */
-function registrarSolicitud() {
+async function registrarSolicitud() {
     const nombre = NOMBRES_DEMO_NUEVA_SOLICITUD[Math.floor(Math.random() * NOMBRES_DEMO_NUEVA_SOLICITUD.length)];
     const monto = Math.floor(Math.random() * 90000) + 10000;
 
-    const nuevaSolicitud = {
-        socio: nombre,
-        monto,
-        fecha: isoFecha(0),
-        estado: 'Pendiente',
-    };
+    try {
+        await addDoc(solicitudesCol, {
+            socio: nombre,
+            monto,
+            fecha: isoFecha(0),
+            estado: 'Pendiente',
+            creadoEn: serverTimestamp(),
+        });
+        const referencia = generarReferencia();
+        mostrarToast(`Solicitud registrada con éxito. N.º de referencia: ${referencia}`);
+    } catch (err) {
+        console.error('Error al registrar solicitud:', err);
+        mostrarToast('No se pudo registrar la solicitud. Verifica tu configuración de Firebase.');
+    }
+}
 
-    state.loans.unshift(nuevaSolicitud);
-    renderTablaSolicitudes();
-    renderKpis();
+/* --- Crear Usuario (Socio) --- */
+async function crearSocio(datos) {
+    await addDoc(sociosCol, {
+        nombre: datos.nombre,
+        cuenta: datos.cuenta,
+        profesion: datos.profesion,
+        usuario: datos.usuario,
+        clave: datos.clave,
+        estado: 'Activo',
+        creadoEn: serverTimestamp(),
+    });
+}
 
-    const referencia = generarReferencia();
-    mostrarToast(`Solicitud registrada con éxito. N.º de referencia: ${referencia}`);
+/* --- Cargar Datos de Ejemplo (solo para pruebas/demo) --- */
+async function cargarDatosEjemplo() {
+    try {
+        mostrarToast('Cargando datos de ejemplo...');
+        const escrituras = [
+            ...MOCK_LOANS.map((prestamo) => addDoc(solicitudesCol, { ...prestamo, creadoEn: serverTimestamp() })),
+            ...MOCK_PARTNERS.map((socio) => addDoc(sociosCol, {
+                ...socio,
+                usuario: socio.nombre.split(' ')[0].toLowerCase(),
+                clave: 'savewave123',
+                creadoEn: serverTimestamp(),
+            })),
+        ];
+        await Promise.all(escrituras);
+        mostrarToast('Datos de ejemplo cargados con éxito.');
+    } catch (err) {
+        console.error('Error al cargar datos de ejemplo:', err);
+        mostrarToast('No se pudieron cargar los datos de ejemplo. Verifica tu configuración de Firebase.');
+    }
 }
 
 /* --- Inicialización --- */
@@ -260,8 +347,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Iniciar por defecto en la vista del Dashboard
             cambiarVista('dashboard');
 
-            // Cargar los datos del panel (dispara el estado de "Cargando...")
-            cargarDatosIniciales();
+            // Conectar con Firestore y sincronizar los datos en tiempo real
+            iniciarSincronizacionDatos();
         });
     }
 
@@ -307,6 +394,72 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnAddLoan = document.getElementById('btn-simulate-add-loan');
     if (btnAddLoan) {
         btnAddLoan.addEventListener('click', registrarSolicitud);
+    }
+
+    // 7. CREAR USUARIO (SOCIO)
+    const btnToggleCrearSocio = document.getElementById('btn-toggle-crear-socio');
+    const panelCrearSocio = document.getElementById('crear-socio-panel');
+    const formCrearSocio = document.getElementById('form-crear-socio');
+    const btnCancelarCrearSocio = document.getElementById('btn-cancelar-crear-socio');
+    const errorCrearSocio = document.getElementById('crear-socio-error');
+
+    if (btnToggleCrearSocio && panelCrearSocio) {
+        btnToggleCrearSocio.addEventListener('click', () => {
+            panelCrearSocio.classList.toggle('hidden');
+            if (!panelCrearSocio.classList.contains('hidden')) {
+                document.getElementById('socio-nombre')?.focus();
+            }
+        });
+    }
+
+    if (btnCancelarCrearSocio && panelCrearSocio) {
+        btnCancelarCrearSocio.addEventListener('click', () => {
+            panelCrearSocio.classList.add('hidden');
+            formCrearSocio?.reset();
+            errorCrearSocio?.classList.add('hidden');
+        });
+    }
+
+    if (formCrearSocio) {
+        formCrearSocio.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const datos = {
+                nombre: document.getElementById('socio-nombre').value.trim(),
+                cuenta: document.getElementById('socio-cuenta').value.trim(),
+                profesion: document.getElementById('socio-profesion').value.trim(),
+                usuario: document.getElementById('socio-usuario').value.trim(),
+                clave: document.getElementById('socio-clave').value.trim(),
+            };
+
+            if (!datos.nombre || !datos.cuenta || !datos.profesion || !datos.usuario || !datos.clave) {
+                if (errorCrearSocio) {
+                    errorCrearSocio.textContent = 'Completa todos los campos para crear el socio.';
+                    errorCrearSocio.classList.remove('hidden');
+                }
+                return;
+            }
+
+            try {
+                await crearSocio(datos);
+                errorCrearSocio?.classList.add('hidden');
+                formCrearSocio.reset();
+                panelCrearSocio?.classList.add('hidden');
+                mostrarToast(`Socio "${datos.nombre}" creado con éxito. Ya puede iniciar sesión en la app con el usuario "${datos.usuario}".`);
+            } catch (err) {
+                console.error('Error al crear socio:', err);
+                if (errorCrearSocio) {
+                    errorCrearSocio.textContent = 'No se pudo guardar el socio. Verifica tu configuración de Firebase (firebase-config.js).';
+                    errorCrearSocio.classList.remove('hidden');
+                }
+            }
+        });
+    }
+
+    // 8. CARGAR DATOS DE EJEMPLO (para pruebas/demo)
+    const btnSeed = document.getElementById('btn-seed-data');
+    if (btnSeed) {
+        btnSeed.addEventListener('click', cargarDatosEjemplo);
     }
 });
 

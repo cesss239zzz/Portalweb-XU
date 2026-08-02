@@ -541,6 +541,43 @@ tr:hover td {
     color: var(--text-muted);
 }
 
+/* --- Encabezado de vista con acción (título + botón) --- */
+.view-header-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.view-header-action h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+/* --- Panel de formulario (ej. Crear Usuario) --- */
+.form-panel {
+    margin-bottom: 24px;
+}
+
+.form-panel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px 20px;
+    margin-bottom: 16px;
+}
+
+.form-panel .form-group {
+    margin-bottom: 0;
+}
+
+.form-panel-actions {
+    display: flex;
+    gap: 12px;
+}
+
 /* --- Tarjetas de Socios (Directorio) --- */
 .partner-card {
     display: flex;
@@ -595,7 +632,7 @@ tr:hover td {
 /* --- Mensajes de Confirmación (Toast) --- */
 .toast-container {
     position: fixed;
-    top: 110px;
+    top: 200px;
     right: 24px;
     z-index: 1000;
     display: flex;
