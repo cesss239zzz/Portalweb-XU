@@ -167,6 +167,10 @@
                                     <span class="btn-icon">⚡</span>
                                     <span>Nueva Alerta</span>
                                 </button>
+                                <button class="btn btn-secondary action-btn" id="btn-seed-data">
+                                    <span class="btn-icon">🌱</span>
+                                    <span>Cargar Datos de Ejemplo</span>
+                                </button>
                             </div>
                             <div class="notification-feed">
                                 <h4>Alertas del Sistema</h4>
@@ -209,6 +213,43 @@
 
                 <!-- 3. VISTA DIRECTORIO DE SOCIOS -->
                 <section id="view-directory" class="vista hidden">
+                    <div class="view-header-action">
+                        <h3>Directorio de Socios</h3>
+                        <button class="btn btn-accent" id="btn-toggle-crear-socio">+ Crear Usuario</button>
+                    </div>
+
+                    <div class="card form-panel hidden" id="crear-socio-panel">
+                        <form id="form-crear-socio">
+                            <div class="form-panel-grid">
+                                <div class="form-group">
+                                    <label for="socio-nombre">Nombre completo</label>
+                                    <input type="text" id="socio-nombre" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="socio-cuenta">Número de cuenta</label>
+                                    <input type="text" id="socio-cuenta" placeholder="0801-XXXX-XXXXX" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="socio-profesion">Profesión</label>
+                                    <input type="text" id="socio-profesion" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="socio-usuario">Usuario (para la app de banca)</label>
+                                    <input type="text" id="socio-usuario" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="socio-clave">Contraseña temporal</label>
+                                    <input type="text" id="socio-clave" required>
+                                </div>
+                            </div>
+                            <div id="crear-socio-error" class="error-message hidden">Completa todos los campos para crear el socio.</div>
+                            <div class="form-panel-actions">
+                                <button type="submit" class="btn btn-primary">Guardar Socio</button>
+                                <button type="button" class="btn btn-secondary" id="btn-cancelar-crear-socio">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+
                     <div class="search-bar-container">
                         <div class="search-input-wrapper">
                             <button type="button" class="search-icon" id="search-socios-btn" aria-label="Buscar socio">🔍</button>
@@ -230,6 +271,8 @@
         </main>
     </div>
 
-    <script src="app.js"></script>
+    <!-- type="module" es necesario para el SDK de Firebase. Por eso esta página
+         debe abrirse desde un servidor (http://...), no con doble clic (file://) -->
+    <script type="module" src="app.js"></script>
 </body>
 </html>
