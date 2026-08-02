@@ -21,6 +21,7 @@ const sociosCol = collection(db, "socios");
 const solicitudesCol = collection(db, "solicitudes");
 
 /* --- Datos de ejemplo (solo se usan si se pulsa "Cargar Datos de Ejemplo") --- */
+/* --- Datos de demostración (simulan una respuesta de backend) --- */
 function isoFecha(offsetDias = 0) {
     const d = new Date();
     d.setDate(d.getDate() + offsetDias);
@@ -49,6 +50,7 @@ const NOMBRES_DEMO_NUEVA_SOLICITUD = [
 ];
 
 // Estado en memoria: es solo una copia local de lo último recibido de Firestore
+// Estado en memoria de la aplicación (simula los datos que vendrían del servidor)
 const state = {
     loans: [],
     partners: [],
@@ -191,6 +193,7 @@ function renderDirectorioSocios(listaSocios) {
         grid.innerHTML = state.partners.length
             ? '<p class="empty-state">No se encontraron socios con ese criterio de búsqueda.</p>'
             : '<p class="empty-state">Aún no hay socios registrados. Usa "+ Crear Usuario" o "Cargar Datos de Ejemplo" en el Dashboard.</p>';
+        grid.innerHTML = '<p class="empty-state">No se encontraron socios con ese criterio de búsqueda.</p>';
         if (contador) contador.textContent = 'Mostrando 0 socios';
         return;
     }
@@ -214,6 +217,8 @@ let loansUnsubscribe = null;
 let partnersUnsubscribe = null;
 
 function iniciarSincronizacionDatos() {
+/* --- Carga inicial de datos (simula una petición al servidor) --- */
+function cargarDatosIniciales() {
     mostrarCargaKpis();
     mostrarCargaTabla();
     mostrarCargaDirectorio();
@@ -244,6 +249,16 @@ function iniciarSincronizacionDatos() {
         console.error('Error al sincronizar socios:', error);
         mostrarErrorConexion();
     });
+    setTimeout(() => {
+        state.loans = [...MOCK_LOANS];
+        state.partners = [...MOCK_PARTNERS];
+
+        renderKpis();
+        renderTablaSolicitudes();
+        renderDirectorioSocios(state.partners);
+
+        if (searchInput) searchInput.disabled = false;
+    }, 700);
 }
 
 /* --- Buscador de Socios --- */
@@ -253,6 +268,20 @@ function filtrarSocios() {
     const query = searchInput ? searchInput.value.trim() : '';
     if (clearBtn) clearBtn.classList.toggle('hidden', query.length === 0);
     renderDirectorioSocios(listaSociosFiltrada());
+    const searchInput = document.getElementById('directory-search');
+    const clearBtn = document.getElementById('clear-search-btn');
+    if (!searchInput) return;
+
+    const query = searchInput.value.trim().toLowerCase();
+    if (clearBtn) clearBtn.classList.toggle('hidden', query.length === 0);
+
+    const filtrados = !query
+        ? state.partners
+        : state.partners.filter((p) =>
+            p.nombre.toLowerCase().includes(query) || p.cuenta.toLowerCase().includes(query)
+        );
+
+    renderDirectorioSocios(filtrados);
 }
 
 function limpiarBusquedaSocios() {
@@ -319,6 +348,23 @@ async function cargarDatosEjemplo() {
         console.error('Error al cargar datos de ejemplo:', err);
         mostrarToast('No se pudieron cargar los datos de ejemplo. Verifica tu configuración de Firebase.');
     }
+function registrarSolicitud() {
+    const nombre = NOMBRES_DEMO_NUEVA_SOLICITUD[Math.floor(Math.random() * NOMBRES_DEMO_NUEVA_SOLICITUD.length)];
+    const monto = Math.floor(Math.random() * 90000) + 10000;
+
+    const nuevaSolicitud = {
+        socio: nombre,
+        monto,
+        fecha: isoFecha(0),
+        estado: 'Pendiente',
+    };
+
+    state.loans.unshift(nuevaSolicitud);
+    renderTablaSolicitudes();
+    renderKpis();
+
+    const referencia = generarReferencia();
+    mostrarToast(`Solicitud registrada con éxito. N.º de referencia: ${referencia}`);
 }
 
 /* --- Inicialización --- */
@@ -349,6 +395,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Conectar con Firestore y sincronizar los datos en tiempo real
             iniciarSincronizacionDatos();
+            // Cargar los datos del panel (dispara el estado de "Cargando...")
+            cargarDatosIniciales();
         });
     }
 
