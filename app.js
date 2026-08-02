@@ -21,10 +21,6 @@ const sociosCol = collection(db, "socios");
 const solicitudesCol = collection(db, "solicitudes");
 
 /* --- Datos de ejemplo (solo se usan si se pulsa "Cargar Datos de Ejemplo") --- */
-<<<<<<< HEAD
-=======
-/* --- Datos de demostración (simulan una respuesta de backend) --- */
->>>>>>> 2d3120e989e41d2a83967f6fcd9673da346eb2e2
 function isoFecha(offsetDias = 0) {
     const d = new Date();
     d.setDate(d.getDate() + offsetDias);
@@ -53,10 +49,6 @@ const NOMBRES_DEMO_NUEVA_SOLICITUD = [
 ];
 
 // Estado en memoria: es solo una copia local de lo último recibido de Firestore
-<<<<<<< HEAD
-=======
-// Estado en memoria de la aplicación (simula los datos que vendrían del servidor)
->>>>>>> 2d3120e989e41d2a83967f6fcd9673da346eb2e2
 const state = {
     loans: [],
     partners: [],
@@ -199,10 +191,6 @@ function renderDirectorioSocios(listaSocios) {
         grid.innerHTML = state.partners.length
             ? '<p class="empty-state">No se encontraron socios con ese criterio de búsqueda.</p>'
             : '<p class="empty-state">Aún no hay socios registrados. Usa "+ Crear Usuario" o "Cargar Datos de Ejemplo" en el Dashboard.</p>';
-<<<<<<< HEAD
-=======
-        grid.innerHTML = '<p class="empty-state">No se encontraron socios con ese criterio de búsqueda.</p>';
->>>>>>> 2d3120e989e41d2a83967f6fcd9673da346eb2e2
         if (contador) contador.textContent = 'Mostrando 0 socios';
         return;
     }
@@ -226,11 +214,6 @@ let loansUnsubscribe = null;
 let partnersUnsubscribe = null;
 
 function iniciarSincronizacionDatos() {
-<<<<<<< HEAD
-=======
-/* --- Carga inicial de datos (simula una petición al servidor) --- */
-function cargarDatosIniciales() {
->>>>>>> 2d3120e989e41d2a83967f6fcd9673da346eb2e2
     mostrarCargaKpis();
     mostrarCargaTabla();
     mostrarCargaDirectorio();
@@ -240,33 +223,6 @@ function cargarDatosIniciales() {
 
     if (loansUnsubscribe) loansUnsubscribe();
     if (partnersUnsubscribe) partnersUnsubscribe();
-<<<<<<< HEAD
-=======
-
-    const solicitudesQuery = query(solicitudesCol, orderBy('creadoEn', 'desc'));
-    loansUnsubscribe = onSnapshot(solicitudesQuery, (snapshot) => {
-        state.loans = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-        renderKpis();
-        renderTablaSolicitudes();
-    }, (error) => {
-        console.error('Error al sincronizar solicitudes:', error);
-        mostrarErrorConexion();
-    });
-
-    const sociosQuery = query(sociosCol, orderBy('creadoEn', 'desc'));
-    partnersUnsubscribe = onSnapshot(sociosQuery, (snapshot) => {
-        state.partners = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-        renderKpis();
-        renderDirectorioSocios(listaSociosFiltrada());
-        if (searchInput) searchInput.disabled = false;
-    }, (error) => {
-        console.error('Error al sincronizar socios:', error);
-        mostrarErrorConexion();
-    });
-    setTimeout(() => {
-        state.loans = [...MOCK_LOANS];
-        state.partners = [...MOCK_PARTNERS];
->>>>>>> 2d3120e989e41d2a83967f6fcd9673da346eb2e2
 
     const solicitudesQuery = query(solicitudesCol, orderBy('creadoEn', 'desc'));
     loansUnsubscribe = onSnapshot(solicitudesQuery, (snapshot) => {
@@ -292,15 +248,6 @@ function cargarDatosIniciales() {
 
 /* --- Buscador de Socios --- */
 function filtrarSocios() {
-<<<<<<< HEAD
-=======
-    const clearBtn = document.getElementById('clear-search-btn');
-    const searchInput = document.getElementById('directory-search');
-    const query = searchInput ? searchInput.value.trim() : '';
-    if (clearBtn) clearBtn.classList.toggle('hidden', query.length === 0);
-    renderDirectorioSocios(listaSociosFiltrada());
-    const searchInput = document.getElementById('directory-search');
->>>>>>> 2d3120e989e41d2a83967f6fcd9673da346eb2e2
     const clearBtn = document.getElementById('clear-search-btn');
     const searchInput = document.getElementById('directory-search');
     const query = searchInput ? searchInput.value.trim() : '';
@@ -321,61 +268,6 @@ function limpiarBusquedaSocios() {
 
 /* --- Registrar Nueva Solicitud --- */
 async function registrarSolicitud() {
-<<<<<<< HEAD
-=======
-    const nombre = NOMBRES_DEMO_NUEVA_SOLICITUD[Math.floor(Math.random() * NOMBRES_DEMO_NUEVA_SOLICITUD.length)];
-    const monto = Math.floor(Math.random() * 90000) + 10000;
-
-    try {
-        await addDoc(solicitudesCol, {
-            socio: nombre,
-            monto,
-            fecha: isoFecha(0),
-            estado: 'Pendiente',
-            creadoEn: serverTimestamp(),
-        });
-        const referencia = generarReferencia();
-        mostrarToast(`Solicitud registrada con éxito. N.º de referencia: ${referencia}`);
-    } catch (err) {
-        console.error('Error al registrar solicitud:', err);
-        mostrarToast('No se pudo registrar la solicitud. Verifica tu configuración de Firebase.');
-    }
-}
-
-/* --- Crear Usuario (Socio) --- */
-async function crearSocio(datos) {
-    await addDoc(sociosCol, {
-        nombre: datos.nombre,
-        cuenta: datos.cuenta,
-        profesion: datos.profesion,
-        usuario: datos.usuario,
-        clave: datos.clave,
-        estado: 'Activo',
-        creadoEn: serverTimestamp(),
-    });
-}
-
-/* --- Cargar Datos de Ejemplo (solo para pruebas/demo) --- */
-async function cargarDatosEjemplo() {
-    try {
-        mostrarToast('Cargando datos de ejemplo...');
-        const escrituras = [
-            ...MOCK_LOANS.map((prestamo) => addDoc(solicitudesCol, { ...prestamo, creadoEn: serverTimestamp() })),
-            ...MOCK_PARTNERS.map((socio) => addDoc(sociosCol, {
-                ...socio,
-                usuario: socio.nombre.split(' ')[0].toLowerCase(),
-                clave: 'savewave123',
-                creadoEn: serverTimestamp(),
-            })),
-        ];
-        await Promise.all(escrituras);
-        mostrarToast('Datos de ejemplo cargados con éxito.');
-    } catch (err) {
-        console.error('Error al cargar datos de ejemplo:', err);
-        mostrarToast('No se pudieron cargar los datos de ejemplo. Verifica tu configuración de Firebase.');
-    }
-function registrarSolicitud() {
->>>>>>> 2d3120e989e41d2a83967f6fcd9673da346eb2e2
     const nombre = NOMBRES_DEMO_NUEVA_SOLICITUD[Math.floor(Math.random() * NOMBRES_DEMO_NUEVA_SOLICITUD.length)];
     const monto = Math.floor(Math.random() * 90000) + 10000;
 
@@ -457,11 +349,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Conectar con Firestore y sincronizar los datos en tiempo real
             iniciarSincronizacionDatos();
-<<<<<<< HEAD
-=======
-            // Cargar los datos del panel (dispara el estado de "Cargando...")
-            cargarDatosIniciales();
->>>>>>> 2d3120e989e41d2a83967f6fcd9673da346eb2e2
         });
     }
 
