@@ -12,10 +12,10 @@
    ========================================================================== */
 
 export const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "TU_PROYECTO.firebaseapp.com",
-    projectId: "TU_PROYECTO",
-    storageBucket: "TU_PROYECTO.appspot.com",
-    messagingSenderId: "TU_SENDER_ID",
-    appId: "TU_APP_ID"
+    apiKey: "AIzaSyD3ozHQRKmw--ewfk-v9zigI0dv7zR83fc",
+    authDomain: "savewave-xu.firebaseapp.com",
+    projectId: "savewave-xu",
+    storageBucket: "savewave-xu.firebasestorage.app",
+    messagingSenderId: "755238132422",
+    appId: "1:755238132422:web:b9219455d478f7d46d15c7"
 };
