@@ -7,6 +7,9 @@ import {
     getFirestore,
     collection,
     addDoc,
+    doc,
+    updateDoc,
+    deleteDoc,
     onSnapshot,
     query,
     orderBy,
@@ -168,7 +171,14 @@ function renderTablaSolicitudes() {
             <td>${formatearLempiras(prestamo.monto)}</td>
             <td>${formatearFecha(prestamo.fecha)}</td>
             <td><span class="badge ${claseBadge(prestamo.estado)}">${prestamo.estado}</span></td>
-            <td class="text-right">—</td>
+            <td class="text-right">
+                ${prestamo.estado === 'Pendiente' ? `
+                    <div class="table-actions">
+                        <button type="button" class="btn-icon-action action-approve" data-id="${prestamo.id}" aria-label="Aprobar solicitud de ${prestamo.socio}">✓</button>
+                        <button type="button" class="btn-icon-action action-reject" data-id="${prestamo.id}" aria-label="Rechazar solicitud de ${prestamo.socio}">✕</button>
+                    </div>
+                ` : '—'}
+            </td>
         </tr>
     `).join('');
 }
@@ -201,6 +211,12 @@ function renderDirectorioSocios(listaSocios) {
             <p class="text-muted">${socio.profesion}</p>
             <p class="text-muted">Cuenta: ${socio.cuenta}</p>
             <span class="badge ${socio.estado === 'Activo' ? 'badge-approved' : 'badge-rejected'}">${socio.estado}</span>
+            <div class="partner-card-actions">
+                <button type="button" class="btn-icon-action action-toggle-estado" data-id="${socio.id}" data-estado="${socio.estado}" aria-label="${socio.estado === 'Activo' ? 'Deshabilitar' : 'Habilitar'} a ${socio.nombre}">
+                    ${socio.estado === 'Activo' ? '⏸ Deshabilitar' : '▶ Habilitar'}
+                </button>
+                <button type="button" class="btn-icon-action action-delete-socio" data-id="${socio.id}" aria-label="Eliminar a ${socio.nombre}">🗑 Eliminar</button>
+            </div>
         </div>
     `).join('');
 
@@ -284,6 +300,43 @@ async function registrarSolicitud() {
     } catch (err) {
         console.error('Error al registrar solicitud:', err);
         mostrarToast('No se pudo registrar la solicitud. Verifica tu configuración de Firebase.');
+    }
+}
+
+/* --- Aprobar / Rechazar Solicitud de Préstamo --- */
+async function actualizarEstadoSolicitud(id, nuevoEstado) {
+    try {
+        await updateDoc(doc(db, 'solicitudes', id), { estado: nuevoEstado });
+        mostrarToast(`Solicitud ${nuevoEstado === 'Aprobado' ? 'aprobada' : 'rechazada'} con éxito.`);
+    } catch (err) {
+        console.error('Error al actualizar la solicitud:', err);
+        mostrarToast('No se pudo actualizar la solicitud. Intenta de nuevo.');
+    }
+}
+
+/* --- Deshabilitar / Habilitar Socio --- */
+async function alternarEstadoSocio(id, estadoActual) {
+    const nuevoEstado = estadoActual === 'Activo' ? 'Inactivo' : 'Activo';
+    try {
+        await updateDoc(doc(db, 'socios', id), { estado: nuevoEstado });
+        mostrarToast(`Socio ${nuevoEstado === 'Activo' ? 'habilitado' : 'deshabilitado'} con éxito.`);
+    } catch (err) {
+        console.error('Error al actualizar el socio:', err);
+        mostrarToast('No se pudo actualizar el socio. Intenta de nuevo.');
+    }
+}
+
+/* --- Eliminar Socio --- */
+async function eliminarSocio(id, nombre) {
+    const confirmado = window.confirm(`¿Seguro que quieres eliminar a "${nombre}"? Esta acción no se puede deshacer.`);
+    if (!confirmado) return;
+
+    try {
+        await deleteDoc(doc(db, 'socios', id));
+        mostrarToast(`Socio "${nombre}" eliminado.`);
+    } catch (err) {
+        console.error('Error al eliminar el socio:', err);
+        mostrarToast('No se pudo eliminar el socio. Intenta de nuevo.');
     }
 }
 
@@ -394,6 +447,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnAddLoan = document.getElementById('btn-simulate-add-loan');
     if (btnAddLoan) {
         btnAddLoan.addEventListener('click', registrarSolicitud);
+    }
+
+    // 6b. APROBAR / RECHAZAR SOLICITUDES (delegado, las filas se re-renderizan)
+    const loansTableBody = document.querySelector('#loans-table tbody');
+    if (loansTableBody) {
+        loansTableBody.addEventListener('click', (e) => {
+            const btnAprobar = e.target.closest('.action-approve');
+            const btnRechazar = e.target.closest('.action-reject');
+            if (btnAprobar) actualizarEstadoSolicitud(btnAprobar.dataset.id, 'Aprobado');
+            if (btnRechazar) actualizarEstadoSolicitud(btnRechazar.dataset.id, 'Rechazado');
+        });
+    }
+
+    // 6c. DESHABILITAR / ELIMINAR SOCIOS (delegado, las tarjetas se re-renderizan)
+    const partnersGridEl = document.getElementById('partners-grid');
+    if (partnersGridEl) {
+        partnersGridEl.addEventListener('click', (e) => {
+            const btnToggle = e.target.closest('.action-toggle-estado');
+            const btnDelete = e.target.closest('.action-delete-socio');
+
+            if (btnToggle) {
+                alternarEstadoSocio(btnToggle.dataset.id, btnToggle.dataset.estado);
+            }
+
+            if (btnDelete) {
+                const nombre = btnDelete.closest('.partner-card')?.querySelector('h4')?.textContent || 'este socio';
+                eliminarSocio(btnDelete.dataset.id, nombre);
+            }
+        });
     }
 
     // 7. CREAR USUARIO (SOCIO)

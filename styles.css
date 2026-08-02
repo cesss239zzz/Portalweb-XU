@@ -535,6 +535,60 @@ tr:hover td {
     border-color: rgba(239, 68, 68, 0.2);
 }
 
+/* --- Botones de Acción (aprobar/rechazar solicitudes, deshabilitar/eliminar socios) --- */
+.table-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-icon-action {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    padding: 6px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: inherit;
+    color: var(--text-muted);
+    transition: var(--transition-smooth);
+}
+
+.btn-icon-action:hover {
+    color: var(--text-main);
+    border-color: var(--border-active);
+}
+
+.btn-icon-action:focus-visible {
+    outline: 2px solid var(--border-active);
+    outline-offset: 2px;
+}
+
+.btn-icon-action.action-approve:hover {
+    color: var(--state-approved);
+    border-color: var(--state-approved);
+}
+
+.btn-icon-action.action-reject:hover,
+.btn-icon-action.action-delete-socio:hover {
+    color: #f87171;
+    border-color: #f87171;
+}
+
+.partner-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.partner-card-actions .btn-icon-action {
+    font-size: 0.8rem;
+}
+
 
 /* --- Utilidades de texto --- */
 .text-muted {
